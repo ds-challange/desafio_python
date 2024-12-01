@@ -3,8 +3,6 @@ from typing import Any
 
 from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
-
-from src.configs.beanie_config import MONGODB_URL, AIRLINE_DOCUMENT_MODELS
 from src.modules.airline.contracts.implementations.beanie.document import AirlineDocument
 
 
