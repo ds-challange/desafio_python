@@ -2,6 +2,8 @@ version: '3.8'
 
 services:
   backend:
+    depends_on:
+    - mongo
     build:
       context: .
       dockerfile: dockerfile.app
@@ -15,6 +17,7 @@ services:
   mongo:
     image: mongo:latest
     container_name: mongo
+    restart: always
     ports:
       - "27017:27017"
     environment:
