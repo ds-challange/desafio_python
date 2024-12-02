@@ -1,7 +1,7 @@
 setup:
-	pip install -r requirements.txt
+	poetry install
 part1:
-	# Insira o comando para executar a primeira parte do trabalho
+	docker-compose up -d
 part2:
 	# Insira o comando para executar a segunda parte do trabalho
 part3:

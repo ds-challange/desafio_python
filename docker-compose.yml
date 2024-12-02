@@ -2,23 +2,44 @@ version: '3.8'
 
 services:
   backend:
+    depends_on:
+      - mongo
     build:
       context: .
       dockerfile: dockerfile.app
     volumes:
-       - ./src/:/code/src/
+      - ./src/:/code/src/
+      - ./temp/data:/code/temp/data
     restart: always
     links:
       - mongo
     ports:
       - 8000:8000
+    environment:
+      - MONGODB_URL=mongodb://mongoadmin:secret@mongo:27017/
+
+    env_file:
+      - .env
+    networks:
+      - mongo_network
+  
+
   mongo:
     image: mongo:latest
     container_name: mongo
+    restart: always
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${USER_MONGO}
-      MONGO_INITDB_ROOT_PASSWORD: ${PASSWORD_MONGO}
+      - MONGO_INITDB_ROOT_USERNAME=mongoadmin
+      - MONGO_INITDB_ROOT_PASSWORD=secret
     volumes:
       - ./data/db:/data/db
+    env_file:
+      - .env
+    networks:
+      - mongo_network
+
+networks:
+  mongo_network:
+    driver: bridge

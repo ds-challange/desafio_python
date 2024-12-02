@@ -4,3 +4,10 @@
 *README.md*
 .vscode
 .env
+.mypy_cache
+temp
+exemplo.py
+*.pyc*
+data
+
+kaggle.json
