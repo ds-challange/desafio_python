@@ -1,43 +1,47 @@
 import asyncio
 
-from src.modules.airline.contracts.implementations.airline_etl.parse_csv_to_document import parse_csv_to_document
+from src.configs.beanie_config import CHUNK_SIZE
+from src.modules.airline.contracts.implementations.airline_etl.document_db_insert_from_csv import document_db_insert_from_csv
 from src.modules.airline.contracts.implementations.beanie.document import AirlineDocument
 from src.providers.kaggle.get_kaggle_airline_dataset import find_file_names, get_kaggle_airline_dataset_zip
 from src.utils.unzip_files import unzip_file
 
 
+
+
 async def get_data():
-    
     """
     Get the data from Kaggle and insert it to the mongodb database 
     """
-    
     extract_to = "temp/unzip/data"
     file_path = "temp/data"
     
     list_file_names = await find_file_names()
-    for file_name in list_file_names:
-        await_zip_download = [
-            get_kaggle_airline_dataset_zip(file_name=file_name)
-        ]
+    
+    limit_workers = asyncio.Semaphore(3)
+    
+    async def download_file(file_name):
+        async with limit_workers:
+            download_is_completed = await get_kaggle_airline_dataset_zip(file_name=file_name)
+            if download_is_completed:
+                print(f"Download {file_name} finished")
+            else:
+                print(f"Download {file_name} failed")
 
-    for completed_zip_download in asyncio.as_completed(await_zip_download):
-        file_name, download_is_completed = await completed_zip_download
-        
-        if download_is_completed:
-            print(f"Download of {file_name} is completed")
+    download_tasks = [download_file(file_name) for file_name in list_file_names]
+    await asyncio.gather(*download_tasks)
+    
+    for file_name in list_file_names:
+        try:
             unzip_file_path = await unzip_file(
                 file_name=file_name,
                 file_path=file_path,
                 extract_to=extract_to,
                 delete_zip=True
-                )
-            
-            airline_document:list[AirlineDocument]=(
-                parse_csv_to_document(file_path=unzip_file_path)
             )
-            await AirlineDocument.insert_many(airline_document)
+            await document_db_insert_from_csv(file_path=unzip_file_path, chunk_size=CHUNK_SIZE)
             
-            print(f"Insertion of {file_name} is completed")
-            
-    print("All files are inserted to the database")
+            print(f"Inserção de {file_name} concluída")
+        except Exception as e:
+            print(f"Erro ao inserir dados: {e}, arquivo: {file_name}")
+
