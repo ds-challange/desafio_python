@@ -9,3 +9,5 @@ temp
 exemplo.py
 *.pyc*
 data
+
+kaggle.json
